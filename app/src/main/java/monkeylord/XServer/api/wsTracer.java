@@ -19,6 +19,7 @@ import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import monkeylord.XServer.XServer;
 import monkeylord.XServer.XposedEntry;
+import monkeylord.XServer.objectparser.ByteArrayParser;
 import monkeylord.XServer.utils.DexHelper;
 import monkeylord.XServer.utils.NanoHTTPD;
 import monkeylord.XServer.utils.NanoWSD;
@@ -164,7 +165,7 @@ public class wsTracer implements XServer.wsOperation {
             super.beforeHookedMethod(param);
             if (tid > 0 && tid != Process.myTid()) return;
             gatherInfo(param);
-            log("<details open>");
+            log("<details open style=\"padding-left: 5px;border-left: 5px outset;\">");
             if (getMid(method) != null)
                 log("<summary>[" + Process.myTid() + "]<a href=\"/methodview?class=" + method.getDeclaringClass().getName() + "&method=" + getMid(method) +"&javaname="+ Utils.getJavaName((Method) method)+ "\">" + method.getDeclaringClass().getName() + "." + MethodDescription(param).toString() + "</a></summary>");
             else
@@ -219,6 +220,7 @@ public class wsTracer implements XServer.wsOperation {
             //Write your translator here.
             if (obj == null) return "null";
             //处理空对象
+            else if (obj.getClass().getName().equals("[B")) return XServer.parsers.get("[B").generate(obj);
             else if(recursive&&obj.getClass().isArray()){
                 //递归处理数组
                 //TODO 处理环，可能会出现少见bug

@@ -132,7 +132,18 @@ public class wsMethodView implements XServer.wsOperation {
             super.beforeHookedMethod(param);
             if (pid > 0 && pid != Process.myPid()) return;
             gatherInfo(param);
-            if(Invoke_New.isMe())return;
+            if(Invoke_New.isMe()){
+                StringBuilder sb=new StringBuilder();
+                StackTraceElement[] stacks = Thread.currentThread().getStackTrace();
+                sb.append("<details closed>");
+                sb.append("<summary>Forwarding..</summary>");
+                for (int i = 0; i <stacks.length ; i++) {
+                    sb.append("<p>"+stacks[i].getClassName()+"."+stacks[i].getMethodName()+"</p>");
+                }
+                sb.append("/<details>");
+                myws.sendLog(sb.toString());
+                return;
+            }
             if (thisObject != null) {
                 ObjectHandler.objects.put(thisObject.getClass().getName() + "@" + Integer.toHexString(new Random().nextInt()), thisObject);
                 myws.sendUpdateObj();
@@ -165,7 +176,7 @@ public class wsMethodView implements XServer.wsOperation {
                 json.put("method", Utils.getJavaName(myws.m));
                 if(thisObject!=null)json.put("this",ObjectHandler.saveObject(thisObject));
                 ArrayList params=new ArrayList();
-                for (Object arg:args) {
+                if(args!=null)for (Object arg:args) {
                     params.add(ObjectHandler.saveObject(arg));
                 }
                 json.put("params",params.toArray());
@@ -176,7 +187,7 @@ public class wsMethodView implements XServer.wsOperation {
                 json.put("stack",stacks);
                 param.setResult(
                         ObjectHandler.parseObject(
-                                new netUtil(myws.server + "/invoke2", new JSONObject(json).toString()).getRet()
+                                new netUtil(myws.server + "/invoke2", new JSONObject(json).toString(2)).getRet()
                         )
                 );
             }
@@ -228,7 +239,8 @@ public class wsMethodView implements XServer.wsOperation {
             if (obj == null) return "null";
             if (obj.getClass().getName().equals("java.lang.String")) return obj.toString();
             else if(Utils.getTypeSignature(obj.getClass()).equals("[B"))return parsers.get("[B").generate(obj);
-            else return JSON.toJSONString(obj);
+            //else return JSON.toJSONString(obj);
+            else return parsers.get("store").generate(obj);
         }
 
         private String MethodDescription(MethodHookParam param) {

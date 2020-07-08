@@ -2,11 +2,11 @@ package monkeylord.XServer.objectparser;
 
 import monkeylord.XServer.XServer;
 
-public class GenericParser implements XServer.ObjectParser {
+public class BooleanParser implements XServer.ObjectParser{
+
     @Override
-    public java.lang.Object parse(java.lang.String data) {
-        //无法还原
-        return null;
+    public Object parse(String data) {
+        return Boolean.parseBoolean(data);
     }
 
     @Override

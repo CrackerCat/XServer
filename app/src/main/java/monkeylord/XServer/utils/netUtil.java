@@ -9,7 +9,9 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -21,6 +23,8 @@ public class netUtil extends Thread {
     String postData;
     String ret;
     String error;
+    List<Proxy> proxys;
+    int status;
 
     public netUtil(String URL, String data) {
         try {
@@ -28,10 +32,18 @@ public class netUtil extends Thread {
             ret = new String(postData);
             url = new URL(URL);
             error = null;
+            proxys = ProxySelector.getDefault().select(new URI("http://www.baidu.com"));
         } catch (MalformedURLException e) {
             error = "MalformedURLException";
+        } catch (URISyntaxException e) {
+            error = "URISyntaxException";
         }
 
+    }
+    public netUtil(String URL, String data,List<Proxy> proxies) {
+        this(URL,data);
+        if(proxies==null)proxys=new ArrayList<Proxy>();
+        else proxys=proxies;
     }
 
     public void run() {
@@ -59,11 +71,10 @@ public class netUtil extends Thread {
 
     private void doPost() {
         try {
-            List<Proxy> proxys = ProxySelector.getDefault().select(new URI("http://www.baidu.com"));
             //proxys.add(new Proxy(Proxy.Type.HTTP,new InetSocketAddress("127.0.0.1",8080)));
             HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection((proxys.size()>0)?proxys.get(0):Proxy.NO_PROXY);
             httpURLConnection.setRequestMethod("POST");// 提交模式
-            httpURLConnection.setRequestProperty("Content-Type","application/json");
+            httpURLConnection.setRequestProperty("Content-Type","application/json; charset=utf-8");
             httpURLConnection.setConnectTimeout(10000);//连接超时 单位毫秒
             //httpURLConnection.setReadTimeout(2000);//读取超时 单位毫秒
             // 发送POST请求必须设置如下两行
@@ -76,7 +87,8 @@ public class netUtil extends Thread {
             // flush输出流的缓冲
             printWriter.flush();
             //开始获取数据
-            BufferedInputStream bis = new BufferedInputStream(httpURLConnection.getInputStream());
+            status = httpURLConnection.getResponseCode();
+            BufferedInputStream bis = new BufferedInputStream((httpURLConnection.getResponseCode()!=200)?httpURLConnection.getErrorStream():httpURLConnection.getInputStream());
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             int len;
             byte[] arr = new byte[1024];
